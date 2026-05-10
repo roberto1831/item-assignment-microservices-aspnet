@@ -1,86 +1,119 @@
-﻿# 🧑‍💻 Prueba Técnica - Confiamed Backend
+# 🧑‍💻 Prueba Técnica – Confiamed Backend (Microservicios)
 
-Este proyecto implementa una solución basada en **microservicios** con un **cliente web** en ASP.NET Core Razor Pages.  
+![.NET](https://img.shields.io/badge/.NET_8-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
+![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=csharp&logoColor=white)
+![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
+![Razor Pages](https://img.shields.io/badge/Razor_Pages-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
+![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
 
-Incluye tres proyectos principales:
-
-1. **Usuario_service** → Servicio que expone los usuarios disponibles.  
-2. **Item_service** → Servicio que gestiona ítems y los asigna a usuarios.  
-3. **ROBERTO_TOPANTA (WebCliente)** → Aplicación web que consume ambos servicios.
+> Solución de microservicios en **.NET 8** con cliente web en **ASP.NET Core Razor Pages**. Implementa asignación inteligente de ítems a usuarios con reglas de negocio basadas en carga y prioridad.
 
 ---
 
-## 📌 Arquitectura
+## 🏗️ Arquitectura del Sistema
 
-`[Usuario_service] ---> [Item_service] ---> [ROBERTO_TOPANTA WebCliente]
-(API REST) (API REST) (Razor Pages)`
+```
+┌──────────────────┐     GET /api/usuarios     ┌──────────────────┐
+│  Usuario_service │◀──────────────────────────│   Item_service   │
+│   API REST       │                           │   API REST       │
+│  :7057           │                           │  :7058           │
+└──────────────────┘                           └────────┬─────────┘
+                                                        │
+                                               ┌────────▼─────────┐
+                                               │  WebCliente      │
+                                               │  Razor Pages     │
+                                               │  :5216           │
+                                               └──────────────────┘
+```
 
+| Proyecto | Tecnología | Puerto | Responsabilidad |
+|---|---|---|---|
+| **Usuario_service** | ASP.NET Core API | 7057 | Expone y rota usuarios disponibles |
+| **Item_service** | ASP.NET Core API | 7058 | Gestiona ítems y aplica reglas de asignación |
+| **WebCliente** | Razor Pages | 5216 | Interfaz web para usuarios e ítems |
 
-- `Usuario_service`: expone `api/usuarios` con lista de usuarios.  
-- `Item_service`: consume `Usuario_service` y asigna ítems con reglas de negocio.  
-- `ROBERTO_TOPANTA`: interfaz web que permite ver usuarios, crear ítems, ver ítems pendientes y marcarlos como completados.
+---
+
+## 📜 Reglas de Negocio – Asignación de Ítems
+
+```
+¿Fecha de entrega < 3 días?
+        │
+       SÍ ──────────────────▶ Asignar al usuario con MENOS carga
+        │
+        NO
+        │
+¿Relevancia ALTA?
+        │
+       SÍ ──────────────────▶ Asignar al usuario con menos de 3 ítems de alta prioridad
+        │
+        NO
+        │
+        └───────────────────▶ Asignar al usuario con MENOS carga general
+```
 
 ---
 
 ## ⚙️ Requisitos
 
-- .NET 8 SDK  
-- Visual Studio 2022 (o VS Code con extensiones C# y Razor)  
-- Postman (para pruebas de API)  
+- .NET 8 SDK
+- Visual Studio 2022 (o VS Code con extensiones C# y Razor)
+- Postman (para pruebas de API)
 
 ---
 
-## ▶️ Ejecución del proyecto
+## ▶️ Ejecución
 
-El proyecto ya está configurado para levantar **los 3 microservicios al mismo tiempo**.  
+El proyecto está configurado para levantar los **3 microservicios simultáneamente**:
 
-1. Abre la solución:
-   `WebCliente.sln`
-2. Selecciona el perfil de ejecución **"Nuevo perfil"** en Visual Studio (esto inicia los 3 proyectos a la vez).  
-3. Ejecutamos (Ctrl + F5 o F5).  
+```bash
+# 1. Abrir la solución
+WebCliente.sln
 
-Se levantarán las siguientes URLs:
+# 2. Seleccionar perfil "Nuevo perfil" en Visual Studio
+# 3. Ejecutar con Ctrl+F5 o F5
+```
 
-- **Usuario_service** → https://localhost:7057/swagger/index.html 
-- **Item_service** → https://localhost:7058/swagger/index.html  
-- **ROBERTO_TOPANTA (cliente web)** → http://localhost:5216  
+### URLs de acceso
+
+| Servicio | URL |
+|---|---|
+| Usuario_service (Swagger) | https://localhost:7057/swagger/index.html |
+| Item_service (Swagger) | https://localhost:7058/swagger/index.html |
+| WebCliente | http://localhost:5216 |
 
 ---
 
-## 📌 Endpoints disponibles
+## 📌 Endpoints
 
 ### 🔹 Usuario_service
-- `GET /api/usuarios` → devuelve lista de usuarios.
-- `GET /api/usuarios/{nombre}` → devuelve un usuario específico.
-- `GET /api/usuarios/asignar` → rota usuarios disponibles.
----
-### Ejemplo de respuesta:
 
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/api/usuarios` | Lista todos los usuarios |
+| GET | `/api/usuarios/{nombre}` | Obtiene un usuario específico |
+| GET | `/api/usuarios/asignar` | Rota y devuelve el siguiente usuario disponible |
+
+**Ejemplo de respuesta:**
 ```json
 [
-{ "id": 1, "nombreUsuario": "Juan Diaz", "totalItemsAsignados": 3, "itemsAltaPrioridad": 1 },
-{ "id": 2, "nombreUsuario": "Maria Toques", "totalItemsAsignados": 5, "itemsAltaPrioridad": 2 },
-{ "id": 3, "nombreUsuario": "Pedro Estevez", "totalItemsAsignados": 2, "itemsAltaPrioridad": 0 }
+  { "id": 1, "nombreUsuario": "Juan Diaz", "totalItemsAsignados": 3, "itemsAltaPrioridad": 1 },
+  { "id": 2, "nombreUsuario": "Maria Toques", "totalItemsAsignados": 5, "itemsAltaPrioridad": 2 },
+  { "id": 3, "nombreUsuario": "Pedro Estevez", "totalItemsAsignados": 2, "itemsAltaPrioridad": 0 }
 ]
 ```
 
-### 📌 Endpoints disponibles
-🔹 Usuario_service
-- GET /api/usuarios → devuelve lista de usuarios.
-- GET /api/usuarios/{nombre} → devuelve un usuario específico.
-- GET /api/usuarios/asignar → rota usuarios disponibles.
-
-
-### Ejemplo de respuesta:
-🔹 Item_service
 ---
-- `POST` /api/items/asignar → asigna un ítem automáticamente a un usuario.
 
-- `GET` /api/items/pendientes → devuelve ítems no completados.
+### 🔹 Item_service
 
-- `POST` /api/items/completar/{id} → marca un ítem como completado.
+| Método | Endpoint | Descripción |
+|---|---|---|
+| POST | `/api/items/asignar` | Asigna un ítem automáticamente según reglas de negocio |
+| GET | `/api/items/pendientes` | Devuelve ítems no completados |
+| POST | `/api/items/completar/{id}` | Marca un ítem como completado |
 
-### Ejemplo de request:
+**Request – Crear ítem:**
 ```json
 {
   "id": 1,
@@ -91,36 +124,33 @@ Se levantarán las siguientes URLs:
   "relevancia": 1
 }
 ```
-### Ejemplo de respuesta:
-```
+
+**Respuesta:**
+```json
 {
   "usuario": "Juan Diaz",
   "item": "Reporte Urgente"
 }
 ```
 
-🔹 ROBERTO_TOPANTA (Cliente Web)
+---
 
-- `Usuarios` → muestra lista de usuarios desde Usuario_service.
+### 🔹 WebCliente (Razor Pages)
 
-- `Items` → muestra ítems pendientes desde Item_service, permite crear ítems y marcarlos como completados.
+| Vista | Descripción |
+|---|---|
+| **Usuarios** | Lista de usuarios con carga actual desde Usuario_service |
+| **Items** | Ítems pendientes, creación y marcado como completados |
 
-### 📜 Reglas de negocio
+---
 
-- Si el ítem tiene fecha de entrega en menos de 3 días, se asigna al usuario con menos carga (ItemsAsignados).
-- Si el ítem tiene relevancia Alta, se asigna a un usuario con menos de 3 ítems de alta prioridad.
+## 🧪 Pruebas con Postman
 
-### Si no se cumple lo anterior, se asigna al usuario con menos carga general.
+```bash
+# Crear ítem
+POST https://localhost:7058/api/items/asignar
+Content-Type: application/json
 
-🧪 Pruebas con Postman
-
-Crear ítem:
-
-- POST https://localhost:7058/api/items/asignar
-
-
-Body:
-```json
 {
   "id": 2,
   "titulo": "Tarea crítica",
@@ -129,16 +159,24 @@ Body:
   "completado": false,
   "relevancia": 1
 }
+
+# Consultar pendientes
+GET https://localhost:7058/api/items/pendientes
+
+# Completar un ítem
+POST https://localhost:7058/api/items/completar/1
 ```
-### Consultar pendientes:
-- GET https://localhost:7058/api/items/pendientes
 
-### Completar un ítem:
-- POST https://localhost:7058/api/items/completar/1
+---
 
+## 👤 Autor
 
+**Ing. Roberto Toapanta**  
+📍 Quito, Ecuador  
+🔗 [GitHub](https://github.com/roberto1831) · [LinkedIn](https://linkedin.com/in/roberto1831)
 
-### 👤 Autor
-### Roberto Toapanta
-### Ingeniero en Tecnologías de la Información
-Quito - Ecuador
+---
+
+## 📄 Licencia
+
+Uso académico / demostrativo. No apto para producción sin revisión de seguridad.
